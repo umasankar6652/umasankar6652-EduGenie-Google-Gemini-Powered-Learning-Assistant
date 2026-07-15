@@ -1,0 +1,52 @@
+{
+    "qa_test_cases": [
+        {
+            "question": "Which is the largest ocean?",
+            "use_local": true,
+            "expected_in_response": "Ocean"
+        },
+        {
+            "question": "What is Photosynthesis?",
+            "use_local": false,
+            "expected_in_response": "plants"
+        }
+    ],
+    "explain_test_cases": [
+        {
+            "concept": "Pythagoras Theorem",
+            "level": "Child"
+        },
+        {
+            "concept": "Photosynthesis",
+            "level": "Teenager"
+        },
+        {
+            "concept": "Quantum Computing",
+            "level": "Expert"
+        }
+    ],
+    "quiz_test_cases": [
+        {
+            "topic": "World War II",
+            "num_questions": 5,
+            "difficulty": "Medium"
+        },
+        {
+            "topic": "Python Basics",
+            "num_questions": 3,
+            "difficulty": "Easy"
+        }
+    ],
+    "summarize_test_cases": [
+        {
+            "text": "A standard desktop computer runs T5 locally on CPU. It downloads tokenizer and seq2seq model parameters and caches them in home directory.",
+            "max_length": 50
+        }
+    ],
+    "roadmap_test_cases": [
+        {
+            "topic": "SQL Database",
+            "level": "Beginner"
+        }
+    ]
+}

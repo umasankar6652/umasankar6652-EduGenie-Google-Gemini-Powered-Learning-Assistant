@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGenie - AI-Powered Learning Assistant</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Marked Markdown Parser CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- Premium Toast Alerts -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="app-sidebar">
+            <div class="brand">
+                <div class="brand-icon" title="EduGenie">🧞✨</div>
+                <span class="brand-name">EduGenie</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="qa" title="Q&A Assistant">
+                    <span class="btn-icon">❓</span> <span class="btn-text">Q&A Assistant</span>
+                </button>
+                <button class="nav-btn" data-tab="explain" title="Concept Explainer">
+                    <span class="btn-icon">💡</span> <span class="btn-text">Concept Explainer</span>
+                </button>
+                <button class="nav-btn" data-tab="quiz" title="Quiz Generator">
+                    <span class="btn-icon">📝</span> <span class="btn-text">Quiz Generator</span>
+                </button>
+                <button class="nav-btn" data-tab="summarize" title="Text Summarizer">
+                    <span class="btn-icon">📄</span> <span class="btn-text">Text Summarizer</span>
+                </button>
+                <button class="nav-btn" data-tab="roadmap" title="Learning Paths">
+                    <span class="btn-icon">🛣️</span> <span class="btn-text">Learning Paths</span>
+                </button>
+            </nav>
+
+            <!-- Activity History List -->
+            <div class="sidebar-history" id="sidebar-history">
+                <div class="history-header">
+                    <span class="history-title">Activity History</span>
+                    <button class="btn-clear-history" id="btn-clear-history" title="Clear All History">🗑️</button>
+                </div>
+                <div class="history-list" id="history-list">
+                    <div class="history-empty">No recent activity</div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="status-card" id="status-card">
+                    <h3>AI Backend</h3>
+                    <div class="status-item">
+                        <span class="status-dot {% if gemini_active %}active{% else %}inactive{% endif %}" id="status-gemini-dot"></span>
+                        <span class="status-label">Gemini API: </span>
+                        <span class="status-value" id="status-gemini-text">{% if gemini_active %}Active{% else %}Inactive{% endif %}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-dot inactive" id="status-local-dot"></span>
+                        <span class="status-label">Local T5: </span>
+                        <span class="status-value" id="status-local-text">Idle</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="app-main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">☰</button>
+                    <div class="header-info">
+                        <h2>Welcome to EduGenie</h2>
+                        <p>Select a learning tool from the sidebar to begin your journey.</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn-theme-toggle" id="btn-theme-toggle" title="Toggle Theme">🌙 Dark Mode</button>
+                </div>
+            </header>
+
+            <!-- API Key Missing Alert if applicable -->
+            {% if not gemini_active %}
+            <div class="alert-box warning-alert" id="api-alert">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <h4>Gemini API Key Missing</h4>
+                    <p>To enable premium AI capabilities (Concept Explainer, Quiz Generator, and Learning Paths), add your key to a `.env` file in the project folder: <code>GEMINI_API_KEY=your_key_here</code></p>
+                    <p><em>EduGenie will automatically load the key once the file is saved (no restart required). Local Q&A and Summarization remain available offline.</em></p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tab Content: Q&A Assistant -->
+            <section class="tab-content active" id="tab-qa">
+                <div class="card card-form">
+                    <div class="card-header">
+                        <h2>❓ Intelligent Q&A Assistant</h2>
+                        <p>Ask any educational question and get an explanation with detailed academic context.</p>
+                    </div>
+                    <form id="form-qa" class="edu-form">
+                        <div class="form-group">
+                            <label for="qa-question">Your Question</label>
+                            <textarea id="qa-question" placeholder="e.g., Which is the largest ocean? or How do plants prepare their food?" required rows="3"></textarea>
+                        </div>
+                        <div class="form-row form-options">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="qa-local">
+                                <span class="slider"></span>
+                                <span class="toggle-label">Enable Offline T5 (High Precision Mode ON)</span>
+                            </label>
+                            <button type="submit" class="btn-primary" id="btn-submit-qa">Ask EduGenie</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card card-result hidden" id="result-qa-card">
+                    <div class="card-header result-header">
+                        <h3>Response</h3>
+                        <div class="result-actions">
+                            <span class="badge" id="qa-badge">Google Gemini 1.5</span>
+                            <button class="btn-icon-only copy-btn" data-target="result-qa-text" title="Copy response">📋</button>
+                        </div>
+                    </div>
+                    <div class="result-body markdown-rendered" id="result-qa-text"></div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Concept Explainer -->
+            <section class="tab-content" id="tab-explain">
+                <div class="card card-form">
+                    <div class="card-header">
+                        <h2>💡 Concept Explainer</h2>
+                        <p>Simplify complex theories or topics tailored for specific age groups and knowledge levels.</p>
+                    </div>
+                    <form id="form-explain" class="edu-form">
+                        <div class="form-group">
+                            <label for="explain-concept">Concept or Topic</label>
+                            <input type="text" id="explain-concept" placeholder="e.g., Pythagoras Theorem, Photosynthesis, Quantum Tunneling" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half-width">
+                                <label for="explain-level">Target Academic Level</label>
+                                <select id="explain-level">
+                                    <option value="Child">Child (Simple analogies, friendly tone)</option>
+                                    <option value="Teenager" selected>Teenager (Engaging, real-world relevance)</option>
+                                    <option value="College Student">College Student (Rigorous, standard definitions)</option>
+                                    <option value="Expert">Expert (Nuanced, highly technical analysis)</option>
+                                </select>
+                            </div>
+                            <div class="form-group half-width align-end">
+                                <button type="submit" class="btn-primary full-width" id="btn-submit-explain">Explain Concept</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card card-result hidden" id="result-explain-card">
+                    <div class="card-header result-header">
+                        <h3>Concept breakdown: <span id="explain-title-display" class="highlight"></span></h3>
+                        <div class="result-actions">
+                            <span class="badge">Google Gemini 1.5</span>
+                            <button class="btn-icon-only copy-btn" data-target="result-explain-text" title="Copy response">📋</button>
+                        </div>
+                    </div>
+                    <div class="result-body markdown-rendered" id="result-explain-text"></div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Quiz Generator -->
+            <section class="tab-content" id="tab-quiz">
+                <div class="card card-form" id="quiz-gen-card">
+                    <div class="card-header">
+                        <h2>📝 AI Quiz Generator</h2>
+                        <p>Evaluate your understanding by generating custom, interactive multiple-choice tests.</p>
+                    </div>
+                    <form id="form-quiz" class="edu-form">
+                        <div class="form-group">
+                            <label for="quiz-topic">Quiz Topic</label>
+                            <input type="text" id="quiz-topic" placeholder="e.g., Pythagoras Theorem, World War II, Python Basics" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half-width">
+                                <label for="quiz-num">Number of Questions</label>
+                                <select id="quiz-num">
+                                    <option value="3">3 Questions</option>
+                                    <option value="5" selected>5 Questions</option>
+                                    <option value="10">10 Questions</option>
+                                </select>
+                            </div>
+                            <div class="form-group half-width">
+                                <label for="quiz-difficulty">Difficulty</label>
+                                <select id="quiz-difficulty">
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row align-end">
+                            <button type="submit" class="btn-primary" style="margin-left: auto;" id="btn-submit-quiz">Generate Quiz</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Interactive Quiz Player Card -->
+                <div class="card card-result hidden" id="quiz-play-card">
+                    <div class="card-header result-header">
+                        <h3 id="quiz-title">Quiz: Pythagoras Theorem</h3>
+                        <div class="quiz-progress-wrapper">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="quiz-progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <span class="quiz-tracker" id="quiz-tracker">Question 1 of 5</span>
+                        </div>
+                    </div>
+                    <div class="quiz-player-body">
+                        <!-- Question slide -->
+                        <div class="quiz-question-container">
+                            <h4 class="quiz-question-text" id="quiz-q-text">Loading question...</h4>
+                            <div class="quiz-options-list" id="quiz-options-list">
+                                <!-- Generated options will be here -->
+                            </div>
+                        </div>
+
+                        <!-- Feedback section (Hidden initially) -->
+                        <div class="quiz-feedback hidden" id="quiz-feedback-box">
+                            <div class="feedback-status" id="quiz-feedback-status">Correct!</div>
+                            <p class="feedback-text" id="quiz-feedback-explanation"></p>
+                        </div>
+                    </div>
+                    <div class="quiz-player-footer">
+                        <button class="btn-secondary" id="btn-quiz-exit">Exit Quiz</button>
+                        <button class="btn-primary" id="btn-quiz-next" disabled>Next Question</button>
+                    </div>
+                </div>
+
+                <!-- Quiz Results Dashboard -->
+                <div class="card card-result hidden" id="quiz-score-card">
+                    <div class="card-header result-header center">
+                        <h3>Quiz Completed! 🎉</h3>
+                    </div>
+                    <div class="quiz-score-body">
+                        <div class="score-radial">
+                            <span class="score-number" id="score-display">0/0</span>
+                            <span class="score-label">Score</span>
+                        </div>
+                        <div class="score-summary" id="score-summary-text">
+                            You got 4 out of 5 questions correct. Great job!
+                        </div>
+                        <div class="quiz-result-buttons">
+                            <button class="btn-secondary" id="btn-quiz-retry">Try Again</button>
+                            <button class="btn-primary" id="btn-quiz-finish">Back to Dashboard</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Text Summarizer -->
+            <section class="tab-content" id="tab-summarize">
+                <div class="card card-form">
+                    <div class="card-header">
+                        <h2>📄 Educational Text Summarizer</h2>
+                        <p>Condense lengthy study materials or textbook chapters into quick summary bullet points locally using LaMini-Flan-T5 (or Gemini Cloud if active).</p>
+                    </div>
+                    <form id="form-summarize" class="edu-form">
+                        <div class="form-group">
+                            <label for="summarize-text">Source Text</label>
+                            <textarea id="summarize-text" placeholder="Paste the text or article you want to summarize here (minimum 10 characters)..." required rows="8"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half-width">
+                                <label for="summarize-len">Approx. Summary Length (words)</label>
+                                <select id="summarize-len">
+                                    <option value="80">Short (~50-80 words)</option>
+                                    <option value="150" selected>Medium (~100-150 words)</option>
+                                    <option value="250">Detailed (~200-250 words)</option>
+                                </select>
+                            </div>
+                            <div class="form-group half-width align-end">
+                                <button type="submit" class="btn-primary full-width" id="btn-submit-summarize">Summarize Text</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card card-result hidden" id="result-summarize-card">
+                    <div class="card-header result-header">
+                        <h3>Summary Output</h3>
+                        <div class="result-actions">
+                            <span class="badge" id="local-model-badge">Local Model (LaMini-Flan-T5)</span>
+                            <button class="btn-icon-only copy-btn" data-target="result-summarize-text" title="Copy response">📋</button>
+                        </div>
+                    </div>
+                    <div class="result-body markdown-rendered" id="result-summarize-text"></div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Learning Roadmaps -->
+            <section class="tab-content" id="tab-roadmap">
+                <div class="card card-form">
+                    <div class="card-header">
+                        <h2>🛣️ Personalized Learning Path Generator</h2>
+                        <p>Enter a topic or skill you want to learn, and receive a complete module-by-module roadmap, reference links, and project ideas.</p>
+                    </div>
+                    <form id="form-roadmap" class="edu-form">
+                        <div class="form-group">
+                            <label for="roadmap-topic">What do you want to learn?</label>
+                            <input type="text" id="roadmap-topic" placeholder="e.g., SQL Databases, Machine Learning, Web Development, Chess Basics" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half-width">
+                                <label for="roadmap-level">Your Starting Level</label>
+                                <select id="roadmap-level">
+                                    <option value="Beginner" selected>Beginner (No prior experience)</option>
+                                    <option value="Intermediate">Intermediate (Some foundation knowledge)</option>
+                                    <option value="Advanced">Advanced (Looking for deep specialization)</option>
+                                </select>
+                            </div>
+                            <div class="form-group half-width align-end">
+                                <button type="submit" class="btn-primary full-width" id="btn-submit-roadmap">Create Learning Path</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card card-result hidden" id="result-roadmap-card">
+                    <div class="card-header result-header">
+                        <h3>Custom Learning Roadmap: <span id="roadmap-title-display" class="highlight"></span></h3>
+                        <div class="result-actions">
+                            <span class="badge">Google Gemini 1.5</span>
+                            <button class="btn-icon-only copy-btn" data-target="result-roadmap-text" title="Copy response">📋</button>
+                        </div>
+                    </div>
+                    <div class="result-body markdown-rendered" id="result-roadmap-text"></div>
+                </div>
+            </section>
+
+            <!-- Skeleton loading overlay -->
+            <div class="loading-overlay hidden" id="global-loading">
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                    <p class="loading-message" id="loading-msg">EduGenie is thinking...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script Entrypoint -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
