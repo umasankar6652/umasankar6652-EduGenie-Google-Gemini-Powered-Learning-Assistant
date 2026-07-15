@@ -119,3 +119,6 @@ Open `http://127.0.0.1:8000` in your browser.
 - Add tests for the API routes and JSON parsing helpers
 - Add screenshots and architecture diagrams to this README
 - Improve deployment documentation for Render, Vercel, or Docker hosting
+
+## Video Demonstration
+https://drive.google.com/file/d/1K0rFJS33CPrYSHrPHXJXOewz9xbHdL7p/view?usp=sharing
